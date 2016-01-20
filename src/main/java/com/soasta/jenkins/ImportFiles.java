@@ -4,6 +4,13 @@
  */
 package com.soasta.jenkins;
 
+import java.io.IOException;
+import java.util.logging.Logger;
+
+import org.kohsuke.stapler.AncestorInPath;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
@@ -16,13 +23,6 @@ import hudson.util.ArgumentListBuilder;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.QuotedStringTokenizer;
-
-import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-
-import java.io.IOException;
-import java.util.logging.Logger;
 
 public class ImportFiles extends AbstractSCommandBuilder {
     /**

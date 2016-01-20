@@ -1,17 +1,10 @@
-/*
- * Copyright (c) 2012-2013, CloudBees, Inc., SOASTA, Inc.
- * All Rights Reserved.
- */
 package com.soasta.jenkins;
+
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,49 +19,45 @@ import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.params.HttpClientParams;
+import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import hudson.CopyOnWrite;
 import hudson.Extension;
 import hudson.ProxyConfiguration;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.util.FormValidation;
-import hudson.util.FormValidation.Kind;
-import hudson.util.Secret;
 import hudson.util.VersionNumber;
 import jenkins.model.Jenkins;
-import net.sf.json.JSONObject;
 
-import com.soasta.jenkins.*;
-/**
- * Information about a specific CloudTest Server and access credential.
- *
- * @author Kohsuke Kawaguchi
- */
-public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
-    /**
-     * URL like "http://touchtestlite.soasta.com/concerto/"
-     */
-    private final String url;
+public class Composition extends AbstractDescribableImpl<Composition>  {
 
-    private final String username;
-    private final Secret password;
 
     private final String id;
-    private final String name;
-
+	private final String name;
+    private final String username;
+    private final String password;
+    private final String url;
+   
+    	
     private transient boolean generatedIdOrName;
-
+    
+    /**
+     * filled by the jenkins plugin, when the user enters data in the UI 
+     */
     @DataBoundConstructor
-    public CloudTestServer(String url, String username, Secret password, String id, String name) throws MalformedURLException {
+    public Composition(String name, String url, String username, String password, String id ) throws MalformedURLException {
+		this.name = name;
+		this.username    = username;
+		this.password    = password;
+		
         if (url == null || url.isEmpty()) {
             // This is not really a valid case, but we have to store something.
             this.url = null;
@@ -81,21 +70,7 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
                 url+="concerto/";
             this.url = url;
         }
-
-        if (username == null || username.isEmpty()) {
-          this.username = "";
-        }
-        else {
-          this.username = username;
-        }
         
-        if (password == null || password.getPlainText() == null || password.getPlainText().isEmpty()) {
-          this.password = null;
-        }
-        else {
-          this.password = password;
-        }
-
         // If the ID is empty, auto-generate one.
         if (id == null || id.isEmpty()) {
             this.id = UUID.randomUUID().toString();
@@ -110,45 +85,28 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
             this.id = id;
         }
 
-        // If the name is empty, default to URL + user name.
-        if (name == null || name.isEmpty()) {
-          if (this.url == null) {
-            this.name = "";
-          }
-          else {
-            this.name = url + " (" + username + ")";
-
-            // This is probably a configuration created using
-            // an older version of the plug-in (before ID and name
-            // existed).  Set a flag so we can write the new
-            // values after initialization (see DescriptorImpl).
-            generatedIdOrName = true;
-          }
-        }
-        else {
-            this.name = name;
-        }
     }
 
     public String getUrl() {
         return url;
     }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public Secret getPassword() {
-        return password;
-    }
+    
+    public String getName() {
+		return name;
+	}
 
     public String getId() {
-        return id;
-    }
+		return id;
+	}
 
-    public String getName() {
-        return name;
-    }
+	public String getUsername() {
+		return username;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+	
 
     public Object readResolve() throws IOException {
         if (id != null &&
@@ -162,35 +120,31 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
 
         // The constructor handles this, but XStream doesn't go
         // through the same code path (as far as I can tell).  Instead,
-        // we create a new CloudTestServer object, which will include an
+        // we create a new Composition object, which will include an
         // auto-generated name and ID, and return that instead.
 
         // When Jenkins is finished loading everything, we'll go back
         // and write the auto-generated values to disk, so this logic
         // should only execute once.  See DescriptorImpl constructor.
         LOGGER.info("Re-creating object to generate a new server ID and name.");
-        return new CloudTestServer(url, username, password, id, name);
+        return new Composition(url, username, password, id, name);
     }
 
     public FormValidation validate() throws IOException {
-    	
-    	if (!ping(getUrl(), 5000)) {
-    		return FormValidation.error("Unable to ping " + getUrl());  
-    	}
         HttpClient hc = createClient();
-        hc.setTimeout(5*1000);
-        LOGGER.info("D4");
+
         PostMethod post = new PostMethod(url + "Login");
         post.addParameter("userName",getUsername());
         
         if (getPassword() != null) {
-          post.addParameter("password",getPassword().getPlainText());
+//          post.addParameter("password",getPassword());
+          post.addParameter("password",getPassword());
         } else {
           post.addParameter("password","");
         }
 
         hc.executeMethod(post);
-        LOGGER.info("D5");
+
         // if the login succeeds, we'll see a redirect
         Header loc = post.getResponseHeader("Location");
         if (loc!=null && loc.getValue().endsWith("/Central"))
@@ -208,25 +162,18 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
      * Postcondition: The build number returned is never null.
      */
     public VersionNumber getBuildNumber() throws IOException {
-    	LOGGER.info("in getbuildnumber" );
         if (url == null) {
             // User didn't enter a value in the Configure Jenkins page.
             // Nothing we can do.
             throw new IllegalStateException("No URL has been configured for this CloudTest server.");
         }
-        FormValidation validate = this.validate();
-        if (!validate.kind.equals(Kind.OK)) {
-        	throw new IllegalStateException("Invalid values. " + validate.getMessage());
-        }
 
         final String[] v = new String[1];
         try {
             HttpClient hc = createClient();
-            LOGGER.info("D0" );
+            
             GetMethod get = new GetMethod(url);
-            LOGGER.info("D1" );
             hc.executeMethod(get);
-            LOGGER.info("D2" );
             
             if (get.getStatusCode() != 200) {
                 throw new IOException(get.getStatusLine().toString());
@@ -272,80 +219,21 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
         return hc;
     }
 
-    public static CloudTestServer getByURL(String url) {
-        List<CloudTestServer> servers = Jenkins.getInstance().getDescriptorByType(DescriptorImpl.class).getServers();
-        for (CloudTestServer s : servers) {
-            if (s.getUrl().equals(url))
-                return s;
-        }
-        // if we can't find any, fall back to the default one
-        if (!servers.isEmpty())
-            return servers.get(0);
-        return null;
-    }
-
-    public static CloudTestServer getByID(String id) {
-        List<CloudTestServer> servers = Jenkins.getInstance().getDescriptorByType(DescriptorImpl.class).getServers();
-        for (CloudTestServer s : servers) {
-            if (s.getId().equals(id))
-                return s;
-        }
-        // if we can't find any, fall back to the default one
-        if (!servers.isEmpty())
-            return servers.get(0);
-        return null;
-    }
-
+    
     @Extension
-    public static class DescriptorImpl extends Descriptor<CloudTestServer> {
+    public static class DescriptorImpl extends Descriptor<Composition> {
 
-        @CopyOnWrite
-        private volatile List<CloudTestServer> servers;
-
-        public DescriptorImpl() {
-            load();
-            if (servers == null) {
-                servers = new ArrayList<CloudTestServer>();
-            } else {
-                // If any of the servers that we loaded was
-                // missing a name or ID, and had to auto-generate
-                // it, then persist the auto-generated values now.
-                for (CloudTestServer s : servers) {
-                    if (s.generatedIdOrName) {
-                        LOGGER.info("Persisting generated server IDs and/or names.");
-                        save();
-
-                        // Calling save() once covers all servers,
-                        // so we can stop looping.
-                        break;
-                    }
-                }
-            }
-        }
 
         @Override
         public String getDisplayName() {
-            return "CloudTest Server";
+            return "";
         }
 
-        public List<CloudTestServer> getServers() {
-            return servers;
-        }
-
-        public void setServers(Collection<? extends CloudTestServer> servers) {
-            this.servers = new ArrayList<CloudTestServer>(servers);
-        }
-
-        @Override
-        public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
-            setServers(req.bindJSONToList(CloudTestServer.class,json.get("servers")));
-            save();
-            return true;
-        }
-
+  
         public FormValidation doValidate(@QueryParameter String url, @QueryParameter String username, @QueryParameter String password, @QueryParameter String id, @QueryParameter String name) throws IOException {
-            return new CloudTestServer(url,username,Secret.fromString(password), id, name).validate();
+            return new Composition(name, url, username, password, id ).validate();
         }
+
 
         public FormValidation doCheckName(@QueryParameter String value) {
             if (value == null || value.trim().isEmpty()) {
@@ -381,6 +269,10 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
             }
         }
 
+        public FormValidation doCheckId(@QueryParameter String value) {
+            return FormValidation.ok();
+        }
+        
         private static boolean isValidURL(String url) {
             try {
                 new URL(url);
@@ -390,36 +282,9 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
                 return false;
             }
         }
-    }
+    }	
+
     
-    /**
-     * Pings a HTTP URL. This effectively sends a HEAD request and returns <code>true</code> if the response code is in 
-     * the 200-399 range.
-     * @param url The HTTP URL to be pinged.
-     * @param timeout The timeout in millis for both the connection timeout and the response read timeout. Note that
-     * the total timeout is effectively two times the given timeout.
-     * @return <code>true</code> if the given HTTP URL has returned response code 200-399 on a HEAD request within the
-     * given timeout, otherwise <code>false</code>.
-     */
-    public static boolean ping(String url, int timeout) {
-        url = url.replaceFirst("^https", "http"); // Otherwise an exception may be thrown on invalid SSL certificates.
+    private static final Logger LOGGER = Logger.getLogger(Composition.class.getName());
 
-        try {
-            HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-            connection.setConnectTimeout(timeout);
-            connection.setReadTimeout(timeout);
-            connection.setRequestMethod("HEAD");
-            int responseCode = connection.getResponseCode();
-            LOGGER.info("D6 : " + responseCode);
-            
-            return (200 <= responseCode && responseCode <= 399);
-        } catch (IOException exception) {
-        	LOGGER.info("D5 : " + url);
-        	LOGGER.info(exception.getMessage());
-            
-            return false;
-        }
-    }    
-
-    private static final Logger LOGGER = Logger.getLogger(CloudTestServer.class.getName());
 }

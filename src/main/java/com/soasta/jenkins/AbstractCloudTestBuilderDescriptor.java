@@ -4,15 +4,16 @@
  */
 package com.soasta.jenkins;
 
+import java.io.IOException;
+
+import javax.inject.Inject;
+
 import hudson.FilePath;
 import hudson.model.AbstractProject;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-
-import javax.inject.Inject;
-import java.io.IOException;
 
 /**
  * @author Kohsuke Kawaguchi

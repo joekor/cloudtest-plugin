@@ -4,6 +4,9 @@
  */
 package com.soasta.jenkins;
 
+import java.io.IOException;
+import java.util.logging.Logger;
+
 import hudson.FilePath;
 import hudson.model.Node;
 import hudson.model.TaskListener;
@@ -11,22 +14,24 @@ import hudson.tools.DownloadFromUrlInstaller;
 import hudson.tools.ToolInstallation;
 import hudson.tools.ToolInstaller;
 
-import java.io.IOException;
-import java.net.URL;
-
 /**
  * @author Kohsuke Kawaguchi
  */
 public class SCommandInstaller extends CommonInstaller {
 
+	private static final Logger LOGGER = Logger.getLogger(SCommandInstaller.class.getName());
+
     public SCommandInstaller(CloudTestServer server) throws IOException {
       super(server, Installers.SCOMMAND_INSTALLER);
+      LOGGER.info("B0");
     }
 
     @Override
     public Installable getInstallable() throws IOException {
+        LOGGER.info("B3");
         Installable i = new Installable();
         i.url = getServer().getUrl() + getInstallerType().getInstallerDownloadPath();
+        LOGGER.info("B4");
         i.id = id;
         i.name = getBuildNumber().toString();
         return i;
@@ -42,7 +47,9 @@ public class SCommandInstaller extends CommonInstaller {
     }
 
     public FilePath scommand(Node node, TaskListener log) throws IOException, InterruptedException {
+        LOGGER.info("B1");
         FilePath scommandHome = performInstallation(node,log);
+        LOGGER.info("B2");
         String os = (String)node.toComputer().getSystemProperties().get("os.name");
         if (os != null && os.startsWith("Windows")) {
             return scommandHome.child("bin/scommand.bat");
@@ -53,7 +60,7 @@ public class SCommandInstaller extends CommonInstaller {
 
     // this is internal use only
     // @Extension
-    public static final class DescriptorImpl extends DownloadFromUrlInstaller.DescriptorImpl<MakeAppTouchTestableInstaller> {
+    public static final class DescriptorImpl extends DownloadFromUrlInstaller.DescriptorImpl<SCommandInstaller> {
         public String getDisplayName() {
             return "Install CloudTest Command-Line Client";
         }

@@ -4,27 +4,6 @@
  */
 package com.soasta.jenkins;
 
-import hudson.Launcher;
-import hudson.Extension;
-import hudson.model.AbstractBuild;
-import hudson.model.BuildListener;
-import hudson.model.Descriptor;
-import hudson.tasks.junit.CaseResult;
-import hudson.tasks.junit.SuiteResult;
-import hudson.tasks.junit.TestAction;
-import hudson.tasks.junit.TestDataPublisher;
-import hudson.tasks.junit.TestObject;
-import hudson.tasks.junit.TestResult;
-import hudson.tasks.junit.TestResultAction;
-import hudson.util.FormValidation;
-
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
-import org.xml.sax.InputSource;
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URL;
@@ -38,6 +17,27 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
+
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+
+import hudson.Extension;
+import hudson.Launcher;
+import hudson.model.AbstractBuild;
+import hudson.model.BuildListener;
+import hudson.model.Descriptor;
+import hudson.tasks.junit.CaseResult;
+import hudson.tasks.junit.SuiteResult;
+import hudson.tasks.junit.TestAction;
+import hudson.tasks.junit.TestDataPublisher;
+import hudson.tasks.junit.TestObject;
+import hudson.tasks.junit.TestResult;
+import hudson.tasks.junit.TestResultAction;
+import hudson.util.FormValidation;
 
 @SuppressWarnings("deprecation")
 public class JunitResultPublisher extends TestDataPublisher

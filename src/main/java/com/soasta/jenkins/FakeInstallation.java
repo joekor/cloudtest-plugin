@@ -4,12 +4,12 @@
  */
 package com.soasta.jenkins;
 
+import java.util.ArrayList;
+
 import hudson.model.Descriptor;
 import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
 import hudson.tools.ToolProperty;
-
-import java.util.ArrayList;
 
 /**
  * @author Kohsuke Kawaguchi

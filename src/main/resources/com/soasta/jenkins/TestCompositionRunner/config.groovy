@@ -5,8 +5,11 @@ f=namespace(lib.FormTagLib)
 f.entry(title:"CloudTest Server",field:"cloudTestServerID") {
     f.select()
 }
-f.entry(title:"Composition(s)",field:"composition") {
-    f.expandableTextbox()
+
+f.section(title:"Compositions") {
+    f.block {
+        f.repeatableProperty(field:"compositions")
+    }
 }
 
 f.advanced {

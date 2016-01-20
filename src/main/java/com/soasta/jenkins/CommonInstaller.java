@@ -4,38 +4,37 @@
  */
 package com.soasta.jenkins;
 
-import java.io.IOException;
-import java.net.URL;
-
-import hudson.FilePath;
-import hudson.model.Node;
-import hudson.model.TaskListener;
-import hudson.tools.DownloadFromUrlInstaller;
-import hudson.tools.ToolInstallation;
-import hudson.util.VersionNumber;
-
-/*******************************************************************************************************************************
- * START (Jenkins User-Agent change related imports)
- *******************************************************************************************************************************/
-import hudson.Functions;
-import hudson.ProxyConfiguration;
-import hudson.FilePath.FileCallable;
-import hudson.remoting.VirtualChannel;
-import hudson.util.IOUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.URL;
 import java.net.URLConnection;
 import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import jenkins.model.Jenkins;
-
 import org.apache.commons.io.input.CountingInputStream;
 import org.apache.tools.zip.ZipEntry;
 import org.apache.tools.zip.ZipFile;
+import org.jenkinsci.remoting.RoleChecker;
+
+import hudson.FilePath;
+import hudson.FilePath.FileCallable;
+/*******************************************************************************************************************************
+ * START (Jenkins User-Agent change related imports)
+ *******************************************************************************************************************************/
+import hudson.Functions;
+import hudson.ProxyConfiguration;
+import hudson.model.Node;
+import hudson.model.TaskListener;
+import hudson.remoting.VirtualChannel;
+import hudson.tools.DownloadFromUrlInstaller;
+import hudson.tools.ToolInstallation;
+import hudson.util.IOUtils;
+import hudson.util.VersionNumber;
+import jenkins.model.Jenkins;
 /*******************************************************************************************************************************
  * END (Jenkins User-Agent change related imports)
  *******************************************************************************************************************************/
@@ -43,29 +42,47 @@ import org.apache.tools.zip.ZipFile;
 public class CommonInstaller extends DownloadFromUrlInstaller
 {
   private final CloudTestServer server;
+  private final Composition composition; 
   private final VersionNumber buildNumber;
   private final Installers installerType;
+
 
   private CommonInstaller(CloudTestServer server, Installers installerType, VersionNumber buildNumber) {
       super(installerType.getCTInstallerType()+buildNumber);
       this.server = server;
       this.installerType = installerType;
       this.buildNumber = buildNumber;
+      LOGGER.info("C0");
   }
 
+  private CommonInstaller(Composition composition, Installers installerType, VersionNumber buildNumber) {
+      super(installerType.getCTInstallerType()+buildNumber);
+      this.composition = composition;
+      this.installerType = installerType;
+      this.buildNumber = buildNumber;
+      LOGGER.info("C0");
+  }
+  
   CommonInstaller(CloudTestServer server, Installers installFileType) throws IOException {
       this(server, installFileType, server.getBuildNumber());
   }
+  
+  CommonInstaller(Composition composition, Installers installFileType) throws IOException {
+      this(composition, installFileType, composition.getBuildNumber());
+  }
 
   CloudTestServer getServer() {
+	  LOGGER.info("C1");
     return server;
   }
   
   VersionNumber getBuildNumber() {
+	  LOGGER.info("C2");
     return buildNumber;
   }
   
   Installers getInstallerType() {
+	  LOGGER.info("C3");
     return installerType;
   }
   
@@ -94,6 +111,7 @@ public class CommonInstaller extends DownloadFromUrlInstaller
   public FilePath performInstallation(ToolInstallation tool, Node node, TaskListener log) throws IOException, InterruptedException {
     try
     {
+        LOGGER.info("C4");
       return super.performInstallation(tool, node, log);
     }
     catch (IOException e)
@@ -138,6 +156,10 @@ public class CommonInstaller extends DownloadFromUrlInstaller
               }
           }
       }
+	public void checkRoles(RoleChecker arg0) throws SecurityException {
+		// TODO Auto-generated method stub
+		
+	}
   }
   
   /**
@@ -312,6 +334,10 @@ public class CommonInstaller extends DownloadFromUrlInstaller
             zip.close();
         }
     }
+	public void checkRoles(RoleChecker arg0) throws SecurityException {
+		// TODO Auto-generated method stub
+		
+	}    
   }
   /*******************************************************************************************************************************
    * END (Jenkins User-Agent related code changes)

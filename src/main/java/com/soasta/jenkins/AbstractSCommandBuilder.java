@@ -6,9 +6,9 @@ package com.soasta.jenkins;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import jenkins.model.Jenkins;
 import hudson.AbortException;
 import hudson.FilePath;
 import hudson.ProxyConfiguration;
@@ -16,6 +16,7 @@ import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.tasks.Builder;
 import hudson.util.ArgumentListBuilder;
+import jenkins.model.Jenkins;
 
 public abstract class AbstractSCommandBuilder extends Builder {
     /**
@@ -50,9 +51,12 @@ public abstract class AbstractSCommandBuilder extends Builder {
       if (s == null)
           throw new AbortException("No TouchTest server is configured in the system configuration.");
   
+      LOGGER.info("A0");
+      
       // Download SCommand, if needed.
       FilePath scommand = new SCommandInstaller(s).scommand(build.getBuiltOn(), listener);
-  
+      LOGGER.info("A1");
+      
       ArgumentListBuilder args = new ArgumentListBuilder();
       args.add(scommand)
           .add("url=" + s.getUrl())
@@ -98,4 +102,7 @@ public abstract class AbstractSCommandBuilder extends Builder {
 
       return args;
     }
+    
+	private static final Logger LOGGER = Logger.getLogger(AbstractSCommandBuilder.class.getName());
+
 }
