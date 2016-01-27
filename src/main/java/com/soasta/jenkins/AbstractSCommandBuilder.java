@@ -46,7 +46,7 @@ public abstract class AbstractSCommandBuilder extends Builder {
         return cloudTestServerID;
     }
 
-    protected ArgumentListBuilder getSCommandArgs(AbstractBuild<?, ?> build, BuildListener listener) throws IOException, InterruptedException {
+    protected ArgumentListBuilder getSCommandArgs(AbstractBuild<?, ?> build, BuildListener listener, Composition composition) throws IOException, InterruptedException {
       CloudTestServer s = getServer();
       if (s == null)
           throw new AbortException("No TouchTest server is configured in the system configuration.");
@@ -57,13 +57,30 @@ public abstract class AbstractSCommandBuilder extends Builder {
       FilePath scommand = new SCommandInstaller(s).scommand(build.getBuiltOn(), listener);
       LOGGER.info("A1");
       
+      // if composition is not null, and has a username and password, then use them. 
+      // If not, use the one in the cloud test server
+      String username = s.getUsername();
+      if (composition!= null && composition.getUsername() != null && composition.getUsername().length() > 0) {
+    	  username = composition.getUsername();
+      }
+      
+      String password = s.getPassword().getPlainText();
+      if (composition!= null && composition.getPassword() != null && composition.getPassword().length() > 0) {
+    	  password = composition.getPassword();
+      }
+      
+      String url = s.getUrl();
+      if (composition!= null && composition.getUrl() != null && composition.getUrl().length() > 0) {
+    	  url = composition.getUrl();
+      }
+
       ArgumentListBuilder args = new ArgumentListBuilder();
       args.add(scommand)
-          .add("url=" + s.getUrl())
-          .add("username="+s.getUsername());
+          .add("url=" + url)
+          .add("username="+username);
           
       if (s.getPassword() != null)
-          args.addMasked("password=" + s.getPassword());
+          args.addMasked("password=" + password);
       
       ProxyConfiguration proxyConfig = Jenkins.getInstance().proxy;
 

@@ -9,6 +9,7 @@ import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.soasta.jenkins.xstream.Message;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 import hudson.tasks.junit.TestAction;

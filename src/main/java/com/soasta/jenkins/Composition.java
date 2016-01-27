@@ -29,6 +29,8 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import com.soasta.jenkins.xstream.CompositionResponse;
+
 import hudson.Extension;
 import hudson.ProxyConfiguration;
 import hudson.model.AbstractDescribableImpl;
@@ -45,6 +47,7 @@ public class Composition extends AbstractDescribableImpl<Composition>  {
     private final String username;
     private final String password;
     private final String url;
+    private CompositionResponse response;
    
     	
     private transient boolean generatedIdOrName;
@@ -107,8 +110,15 @@ public class Composition extends AbstractDescribableImpl<Composition>  {
 		return password;
 	}
 	
+    public CompositionResponse getResponse() {
+		return response;
+	}
 
-    public Object readResolve() throws IOException {
+    public void setResponse(CompositionResponse response) {
+		this.response = response;
+	}
+
+	public Object readResolve() throws IOException {
         if (id != null &&
             id.trim().length() > 0 &&
             name != null &&
@@ -131,6 +141,7 @@ public class Composition extends AbstractDescribableImpl<Composition>  {
     }
 
     public FormValidation validate() throws IOException {
+    	
         HttpClient hc = createClient();
 
         PostMethod post = new PostMethod(url + "Login");
@@ -214,7 +225,7 @@ public class Composition extends AbstractDescribableImpl<Composition>  {
     }
 
     private HttpClient createClient() {
-        HttpClient hc = new JenkinsHttpClient().createClient();
+        HttpClient hc = JenkinsHttpClient.createClient();
         
         return hc;
     }

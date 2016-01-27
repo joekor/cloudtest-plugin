@@ -25,6 +25,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
+import com.soasta.jenkins.xstream.Message;
+
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;

@@ -8,7 +8,12 @@ f.entry(title:"Transaction Name",field:"transactionname") {
 f.entry(title:"Threshold",field:"thresholdname" ) {
   f.select(name:"thresholdname")
 }
-f.entry(title:"Threshold Value",field:"thresholdvalue") {
+
+f.entry(title:"Threshold Min Value",field:"thresholdminvalue") {
+    f.textbox()
+  }
+
+f.entry(title:"Threshold Max Value",field:"thresholdmaxvalue") {
     f.textbox()
   }
 

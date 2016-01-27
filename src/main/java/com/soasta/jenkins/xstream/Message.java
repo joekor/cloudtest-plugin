@@ -11,7 +11,7 @@
 //
 //**************************************************
 
-package com.soasta.jenkins;
+package com.soasta.jenkins.xstream;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 

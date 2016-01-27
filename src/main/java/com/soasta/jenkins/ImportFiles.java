@@ -88,7 +88,7 @@ public class ImportFiles extends AbstractSCommandBuilder {
 
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
-        ArgumentListBuilder args = getSCommandArgs(build, listener);
+        ArgumentListBuilder args = getSCommandArgs(build, listener, null);
 
         args.add("cmd=import");
         

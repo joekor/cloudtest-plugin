@@ -17,7 +17,8 @@ import hudson.util.ListBoxModel;
 public class TransactionThreshold extends AbstractDescribableImpl<TransactionThreshold>
 {
   private final String thresholdname;
-  private final String thresholdvalue; 
+  private final String thresholdminvalue;
+  private final String thresholdmaxvalue;
   private final String transactionname; 
   
   private static final String PCTL_90TH       = "90th Percentile";
@@ -39,13 +40,14 @@ public class TransactionThreshold extends AbstractDescribableImpl<TransactionThr
    * filled by the jenkins plugin, when the user enters data in the UI 
    * @param transactionname - name of transaction
    * @param thresholdname - threshold name, picked from a list box
-   * @param thresholdvalue - the threshold value
+   * @param thresholdmaxvalue - the threshold value
    * @param thresholdid - a place holder for the threshold name, when it is needed to be loaded by the UI 
    */
   @DataBoundConstructor
-  public TransactionThreshold(String transactionname, String thresholdname, String thresholdvalue,String thresholdid) {
+  public TransactionThreshold(String transactionname, String thresholdname, String thresholdminvalue, String thresholdmaxvalue,String thresholdid) {
       this.thresholdname = thresholdname;
-      this.thresholdvalue = thresholdvalue;
+      this.thresholdminvalue = thresholdminvalue;
+      this.thresholdmaxvalue = thresholdmaxvalue;
       this.transactionname = transactionname;
   }
   
@@ -60,14 +62,18 @@ public class TransactionThreshold extends AbstractDescribableImpl<TransactionThr
       return thresholdname;
   }
 
-  public String getThresholdvalue() {
-      return thresholdvalue;
+  public String getThresholdmaxvalue() {
+      return thresholdmaxvalue;
+  }
+
+  public String getThresholdminvalue() {
+      return thresholdminvalue;
   }
 
   public String toScommandString() {
       String WHITESPACE_PATTERN = "\\s"; 
       String trimSpaceThresholdName = thresholdname.replaceAll(WHITESPACE_PATTERN,"");
-      String scommandFormatted = String.format(THRESHOLD_TO_SCOMMAND_FORMAT, transactionname,trimSpaceThresholdName,thresholdvalue);
+      String scommandFormatted = String.format(THRESHOLD_TO_SCOMMAND_FORMAT, transactionname,trimSpaceThresholdName,thresholdmaxvalue);
       return scommandFormatted;
   }
   
@@ -96,10 +102,36 @@ public class TransactionThreshold extends AbstractDescribableImpl<TransactionThr
      * it should be an alphanumeric number 
      * @param value - entered via jenkins UI 
      */
-    public FormValidation doCheckThresholdvalue(@QueryParameter String value) {
+    public FormValidation doCheckThresholdmaxvalue(@QueryParameter String value) {
       // basic checks, the string must not be empty 
       if (value == null || value.trim().isEmpty()) {
-        return FormValidation.error("Parameter 'Threshold Value' is required");
+        return FormValidation.error("Parameter 'Threshold Max Value' is required");
+      } 
+      
+      // verify that the string truly represents a number 
+      double dNum=0;
+      try{
+        dNum = Double.parseDouble(value);
+      }
+      catch(NumberFormatException e){
+        return FormValidation.error("Value must be a positive number");
+      }
+      
+      if (dNum < 0)
+        return FormValidation.error("Value must be >= 0");
+
+      return FormValidation.ok();
+    }
+    
+    /**
+     * checks the validity of the threshold value parameter
+     * it should be an alphanumeric number 
+     * @param value - entered via jenkins UI 
+     */
+    public FormValidation doCheckThresholdminvalue(@QueryParameter String value) {
+      // basic checks, the string must not be empty 
+      if (value == null || value.trim().isEmpty()) {
+        return FormValidation.error("Parameter 'Threshold Min Value' is required");
       } 
       
       // verify that the string truly represents a number 
@@ -128,16 +160,16 @@ public class TransactionThreshold extends AbstractDescribableImpl<TransactionThr
       final ListBoxModel listBox = new ListBoxModel();
 
       listBox.add(AVG_MSG_RSP, "AverageResponseTime");
-      listBox.add(PCTL_90TH, "90thPercentile");
-      listBox.add(MIN_MSG_RSP, "MinResponseTime");
-      listBox.add(MAX_MSG_RSP, "MaxResponseTime");
-      listBox.add(BYTES_SENT, "TotalBytesSent");
-      listBox.add(BYTES_RECEIVED, "TotalBytesReceived");
-      listBox.add(TRANSACTION_ERRORS, "ErrorsPerTransaction");
-      listBox.add(MIN_TRANSACTION_COUNT, "MinimumTransactionCount");   
-      listBox.add(MIN_DURATION, "MinDuration");
-      listBox.add(MAX_DURATION, "MaxDuration");
-      listBox.add(AVG_DURATION, "AverageDuration");
+      //listBox.add(PCTL_90TH, "90thPercentile");
+      //listBox.add(MIN_MSG_RSP, "MinResponseTime");
+      //listBox.add(MAX_MSG_RSP, "MaxResponseTime");
+      //listBox.add(BYTES_SENT, "TotalBytesSent");
+      //listBox.add(BYTES_RECEIVED, "TotalBytesReceived");
+      //listBox.add(TRANSACTION_ERRORS, "ErrorsPerTransaction");
+      //listBox.add(MIN_TRANSACTION_COUNT, "MinimumTransactionCount");   
+      //listBox.add(MIN_DURATION, "MinDuration");
+      //listBox.add(MAX_DURATION, "MaxDuration");
+      //listBox.add(AVG_DURATION, "AverageDuration");
       
 
       return listBox;

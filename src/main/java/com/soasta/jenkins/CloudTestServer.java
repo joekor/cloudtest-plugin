@@ -172,35 +172,10 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
         return new CloudTestServer(url, username, password, id, name);
     }
 
-    public FormValidation validate() throws IOException {
+    public FormValidation validate(Composition composition) throws IOException {
     	
-    	if (!ping(getUrl(), 5000)) {
-    		return FormValidation.error("Unable to ping " + getUrl());  
-    	}
-        HttpClient hc = createClient();
-        hc.setTimeout(5*1000);
-        LOGGER.info("D4");
-        PostMethod post = new PostMethod(url + "Login");
-        post.addParameter("userName",getUsername());
-        
-        if (getPassword() != null) {
-          post.addParameter("password",getPassword().getPlainText());
-        } else {
-          post.addParameter("password","");
-        }
+    	return CloudTestServer.validate(this, composition);
 
-        hc.executeMethod(post);
-        LOGGER.info("D5");
-        // if the login succeeds, we'll see a redirect
-        Header loc = post.getResponseHeader("Location");
-        if (loc!=null && loc.getValue().endsWith("/Central"))
-            return FormValidation.ok("Success!");
-
-        if (!post.getResponseBodyAsString().contains("SOASTA"))
-            return FormValidation.error(getUrl()+" doesn't look like a CloudTest server");
-
-        // if it fails, the server responds with 200!
-        return FormValidation.error("Invalid credentials.");
     }
 
     /**
@@ -214,9 +189,9 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
             // Nothing we can do.
             throw new IllegalStateException("No URL has been configured for this CloudTest server.");
         }
-        FormValidation validate = this.validate();
+        FormValidation validate = this.validate(null);
         if (!validate.kind.equals(Kind.OK)) {
-        	throw new IllegalStateException("Invalid values. " + validate.getMessage());
+        	throw new IllegalStateException("Unable to get Build Number from Cloud Server. " + validate.getMessage());
         }
 
         final String[] v = new String[1];
@@ -267,7 +242,7 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
     }
 
     private HttpClient createClient() {
-        HttpClient hc = new JenkinsHttpClient().createClient();
+        HttpClient hc = JenkinsHttpClient.createClient();
         
         return hc;
     }
@@ -344,7 +319,7 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
         }
 
         public FormValidation doValidate(@QueryParameter String url, @QueryParameter String username, @QueryParameter String password, @QueryParameter String id, @QueryParameter String name) throws IOException {
-            return new CloudTestServer(url,username,Secret.fromString(password), id, name).validate();
+            return new CloudTestServer(url,username,Secret.fromString(password), id, name).validate(null);
         }
 
         public FormValidation doCheckName(@QueryParameter String value) {
@@ -390,6 +365,56 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
                 return false;
             }
         }
+    }
+    
+
+    public static FormValidation validate(CloudTestServer s, Composition composition) throws IOException {
+    	
+        // if composition is not null, and has a username and password, then use them. 
+        // If not, use the one in the cloud test server
+        String username = s.getUsername();
+        if (composition!= null && composition.getUsername() != null && composition.getUsername().length() > 0) {
+      	  username = composition.getUsername();
+        }
+        
+        String password = s.getPassword().getPlainText();
+        if (composition!= null && composition.getPassword() != null && composition.getPassword().length() > 0) {
+      	  password = composition.getPassword();
+        }
+        
+        String url = s.getUrl();
+        if (composition!= null && composition.getUrl() != null && composition.getUrl().length() > 0) {
+      	  url = composition.getUrl();
+        }
+        
+    	if (!ping(url, 5000)) {
+    		return FormValidation.error("Unable to ping " + url);  
+    	}
+        HttpClient hc = JenkinsHttpClient.createClient();
+        
+        hc.setTimeout(5*1000);
+        LOGGER.info("D4");
+        PostMethod post = new PostMethod(url + "Login");
+        post.addParameter("userName", username);
+        
+        if (password != null) {
+          post.addParameter("password", password);
+        } else {
+          post.addParameter("password","");
+        }
+
+        hc.executeMethod(post);
+        LOGGER.info("D5");
+        // if the login succeeds, we'll see a redirect
+        Header loc = post.getResponseHeader("Location");
+        if (loc!=null && loc.getValue().endsWith("/Central"))
+            return FormValidation.ok("Success!");
+
+        if (!post.getResponseBodyAsString().contains("SOASTA"))
+            return FormValidation.error(url+" doesn't look like a CloudTest server");
+
+        // if it fails, the server responds with 200!
+        return FormValidation.error("Invalid credentials.");
     }
     
     /**

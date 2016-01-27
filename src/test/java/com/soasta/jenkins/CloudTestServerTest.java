@@ -29,7 +29,7 @@ public class CloudTestServerTest extends HudsonTestCase {
     }
 
     public void testValidate() throws Exception {
-        FormValidation f = aServer.validate();
+        FormValidation f = CloudTestServer.validate(aServer, null);
         assertThat(f.kind, is(Kind.ERROR));
 
 //        f = new CloudTestServer("http://testdrive.soasta.com/", "abc", Secret.fromString("def")).validate();

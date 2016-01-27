@@ -42,7 +42,6 @@ import jenkins.model.Jenkins;
 public class CommonInstaller extends DownloadFromUrlInstaller
 {
   private final CloudTestServer server;
-  private final Composition composition; 
   private final VersionNumber buildNumber;
   private final Installers installerType;
 
@@ -55,20 +54,8 @@ public class CommonInstaller extends DownloadFromUrlInstaller
       LOGGER.info("C0");
   }
 
-  private CommonInstaller(Composition composition, Installers installerType, VersionNumber buildNumber) {
-      super(installerType.getCTInstallerType()+buildNumber);
-      this.composition = composition;
-      this.installerType = installerType;
-      this.buildNumber = buildNumber;
-      LOGGER.info("C0");
-  }
-  
   CommonInstaller(CloudTestServer server, Installers installFileType) throws IOException {
       this(server, installFileType, server.getBuildNumber());
-  }
-  
-  CommonInstaller(Composition composition, Installers installFileType) throws IOException {
-      this(composition, installFileType, composition.getBuildNumber());
   }
 
   CloudTestServer getServer() {

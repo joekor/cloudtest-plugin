@@ -11,7 +11,7 @@ import jenkins.model.Jenkins;
 
 public class JenkinsHttpClient {
 
-    public HttpClient createClient() {
+    public static HttpClient createClient() {
     	HttpClientParams connectionParams = new HttpClientParams(); 
     	connectionParams.setConnectionManagerTimeout(1000);
         HttpClient hc = new HttpClient(connectionParams);

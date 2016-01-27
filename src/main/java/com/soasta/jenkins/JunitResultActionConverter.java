@@ -13,6 +13,7 @@
 
 package com.soasta.jenkins;
 
+import com.soasta.jenkins.xstream.Message;
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
