@@ -90,4 +90,14 @@ public class Testsuite {
 		this.time = time;
 	}
 
+	public void incrementFailures() {
+		this.failures++;
+		
+	}
+
+	public void incrementCount() {
+		this.tests++;
+		
+	}
+
 }
