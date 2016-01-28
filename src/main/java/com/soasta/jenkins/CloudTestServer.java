@@ -378,8 +378,8 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
         }
         
         String password = s.getPassword().getPlainText();
-        if (composition!= null && composition.getPassword() != null && composition.getPassword().length() > 0) {
-      	  password = composition.getPassword();
+        if (composition!= null && composition.getPassword() != null && composition.getPassword().getPlainText().length() > 0) {
+      	  password = composition.getPassword().getPlainText();
         }
         
         String url = s.getUrl();

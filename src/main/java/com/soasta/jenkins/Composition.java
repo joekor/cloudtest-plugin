@@ -36,6 +36,7 @@ import hudson.ProxyConfiguration;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.util.FormValidation;
+import hudson.util.Secret;
 import hudson.util.VersionNumber;
 import jenkins.model.Jenkins;
 
@@ -45,7 +46,7 @@ public class Composition extends AbstractDescribableImpl<Composition>  {
     private final String id;
 	private final String name;
     private final String username;
-    private final String password;
+    private final Secret password;
     private final String url;
     private CompositionResponse response;
    
@@ -56,7 +57,7 @@ public class Composition extends AbstractDescribableImpl<Composition>  {
      * filled by the jenkins plugin, when the user enters data in the UI 
      */
     @DataBoundConstructor
-    public Composition(String name, String url, String username, String password, String id ) throws MalformedURLException {
+    public Composition(String name, String url, String username, Secret password, String id ) throws MalformedURLException {
 		this.name = name;
 		this.username    = username;
 		this.password    = password;
@@ -106,7 +107,7 @@ public class Composition extends AbstractDescribableImpl<Composition>  {
 		return username;
 	}
 
-	public String getPassword() {
+	public Secret getPassword() {
 		return password;
 	}
 	
@@ -137,7 +138,7 @@ public class Composition extends AbstractDescribableImpl<Composition>  {
         // and write the auto-generated values to disk, so this logic
         // should only execute once.  See DescriptorImpl constructor.
         LOGGER.info("Re-creating object to generate a new server ID and name.");
-        return new Composition(url, username, password, id, name);
+        return new Composition(name, url, username, password, id );
     }
 
     public FormValidation validate() throws IOException {
@@ -149,7 +150,7 @@ public class Composition extends AbstractDescribableImpl<Composition>  {
         
         if (getPassword() != null) {
 //          post.addParameter("password",getPassword());
-          post.addParameter("password",getPassword());
+          post.addParameter("password",getPassword().getPlainText());
         } else {
           post.addParameter("password","");
         }
@@ -242,7 +243,7 @@ public class Composition extends AbstractDescribableImpl<Composition>  {
 
   
         public FormValidation doValidate(@QueryParameter String url, @QueryParameter String username, @QueryParameter String password, @QueryParameter String id, @QueryParameter String name) throws IOException {
-            return new Composition(name, url, username, password, id ).validate();
+            return new Composition(name, url, username, Secret.fromString(password), id ).validate();
         }
 
 

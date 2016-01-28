@@ -20,7 +20,7 @@ f.entry(title:"Username",field:"username") {
 }
 
 f.entry(title:"Password",field:"password") {
-    f.textbox()
+    f.password()
 }
 
 f.validateButton(method:"validate",with:"url,username,password,id,name",title:"Test Connection")
