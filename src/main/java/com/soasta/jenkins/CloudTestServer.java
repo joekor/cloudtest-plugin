@@ -183,7 +183,7 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
      * Postcondition: The build number returned is never null.
      */
     public VersionNumber getBuildNumber() throws IOException {
-    	LOGGER.info("in getbuildnumber" );
+    	log("Retieving Build Number from Soasta Cloud Server");
         if (url == null) {
             // User didn't enter a value in the Configure Jenkins page.
             // Nothing we can do.
@@ -197,11 +197,8 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
         final String[] v = new String[1];
         try {
             HttpClient hc = createClient();
-            LOGGER.info("D0" );
             GetMethod get = new GetMethod(url);
-            LOGGER.info("D1" );
             hc.executeMethod(get);
-            LOGGER.info("D2" );
             
             if (get.getStatusCode() != 200) {
                 throw new IOException(get.getStatusLine().toString());
@@ -241,7 +238,11 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
           this.getDescriptor().getDisplayName() + "\': <" + url + ">.");
     }
 
-    private HttpClient createClient() {
+    private void log(String message) {
+    	LOGGER.info(message );
+	}
+
+	private HttpClient createClient() {
         HttpClient hc = JenkinsHttpClient.createClient();
         
         return hc;
@@ -387,13 +388,12 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
       	  url = composition.getUrl();
         }
         
-    	if (!ping(url, 5000)) {
+    	if (!ping(url, 30000)) {
     		return FormValidation.error("Unable to ping " + url);  
     	}
         HttpClient hc = JenkinsHttpClient.createClient();
         
         hc.setTimeout(5*1000);
-        LOGGER.info("D4");
         PostMethod post = new PostMethod(url + "Login");
         post.addParameter("userName", username);
         
@@ -404,7 +404,6 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
         }
 
         hc.executeMethod(post);
-        LOGGER.info("D5");
         // if the login succeeds, we'll see a redirect
         Header loc = post.getResponseHeader("Location");
         if (loc!=null && loc.getValue().endsWith("/Central"))
@@ -435,11 +434,8 @@ public class CloudTestServer extends AbstractDescribableImpl<CloudTestServer> {
             connection.setReadTimeout(timeout);
             connection.setRequestMethod("HEAD");
             int responseCode = connection.getResponseCode();
-            LOGGER.info("D6 : " + responseCode);
-            
             return (200 <= responseCode && responseCode <= 399);
         } catch (IOException exception) {
-        	LOGGER.info("D5 : " + url);
         	LOGGER.info(exception.getMessage());
             
             return false;

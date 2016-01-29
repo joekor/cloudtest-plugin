@@ -23,15 +23,13 @@ public class SCommandInstaller extends CommonInstaller {
 
     public SCommandInstaller(CloudTestServer server) throws IOException {
       super(server, Installers.SCOMMAND_INSTALLER);
-      LOGGER.info("B0");
     }
 
     @Override
     public Installable getInstallable() throws IOException {
-        LOGGER.info("B3");
+        
         Installable i = new Installable();
         i.url = getServer().getUrl() + getInstallerType().getInstallerDownloadPath();
-        LOGGER.info("B4");
         i.id = id;
         i.name = getBuildNumber().toString();
         return i;
@@ -47,9 +45,7 @@ public class SCommandInstaller extends CommonInstaller {
     }
 
     public FilePath scommand(Node node, TaskListener log) throws IOException, InterruptedException {
-        LOGGER.info("B1");
         FilePath scommandHome = performInstallation(node,log);
-        LOGGER.info("B2");
         String os = (String)node.toComputer().getSystemProperties().get("os.name");
         if (os != null && os.startsWith("Windows")) {
             return scommandHome.child("bin/scommand.bat");

@@ -147,10 +147,8 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 		String[] options = additionalOptionsExpanded == null ? null
 				: new QuotedStringTokenizer(additionalOptionsExpanded).toArray();
 
-		LOGGER.info("0");
 		for (Composition composition : compositions) {
 			ArgumentListBuilder args = getSCommandArgs(build, listener, composition);
-			LOGGER.info("1");
 
 			// Add the additional options to the composition if there are any.
 			if (options != null) {
@@ -168,7 +166,8 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 		}
 
 		LOGGER.info("about to invoke all");
-
+		listener.getLogger().println("Invoking all compositions in parallel.");
+		
 		int errorCount = 0;
 
 		// returns only after all tasks are complete
@@ -214,16 +213,7 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 		String resultsPattern = resultsDir + "/**/*.xml";
 		JUnitResultArchiver archiver = new JUnitResultArchiver(resultsPattern);
 		return archiver.perform(build, launcher, listener);
-		// return errorCount == 0;
-		// // Now that we've finished running all the compositions, pass
-		// // the results directory off to the JUnit archiver.
-		// String resultsPattern = resultsDir + "/**/*.xml";
-		// JUnitResultArchiver archiver = new
-		// JUnitResultArchiver(resultsPattern, true,
-		// new DescribableList<TestDataPublisher,
-		// Descriptor<TestDataPublisher>>(Saveable.NOOP,
-		// Collections.singleton(new JunitResultPublisher(null))));
-		// return archiver.perform(build, launcher, listener);
+
 
 	}
 
@@ -232,39 +222,20 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 		return () -> {
 
 			LOGGER.info("in callable thing");
+			listener.getLogger().println("Creating scommand args for running composition : " + composition.getName());
 
 			// changing format from junitxml to be plain xml,
 			// as we need the ResultName to get the results.
 			args.add("cmd=play", "wait", "format=xml").add("name=" + composition.getName());
-
-//			String fileName = composition + ".xml";
-//
-//			// Strip off any leading slash characters (composition names
-//			// will typically be the full CloudTest folder path).
-//			if (fileName.startsWith("/")) {
-//				fileName = fileName.substring(1);
-//			}
-//
-//			// Put the file in the test results directory.
-//			fileName = resultsDir + File.separator + fileName;
-
-			//FilePath xml = new FilePath(build.getWorkspace(), fileName);
-
-			// Make sure the directory exists.
-			//xml.getParent().mkdirs();
+			//listener.getLogger().println(args);
 
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			// baos.toByteArray()
-			// TeeOutputStream tos = new TeeOutputStream(xml.write(), baos);
 
 			// Run it!
 			int exitCode = launcher.launch().cmds(args).pwd(build.getWorkspace()).stdout(baos)
 					.stderr(listener.getLogger()).join();
 
 			String compositionResult = baos.toString().trim();
-			//LOGGER.info("compositionResult = " + compositionResult);
-			//LOGGER.info(fileName);
-			//xml.write(compositionResult, null);
 
 			writeFile(resultsDir, build.getWorkspace(), compositionResult, composition, "response", "xml");
 
@@ -278,20 +249,20 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 
 			if (exitCode == 0) {
 				// Parse returned results file.
-				// FileReader reader = new FileReader(xml.getName()); // load
-				// file
 				xstream.processAnnotations(CompositionResponse.class); 
 				CompositionResponse response = (CompositionResponse) xstream.fromXML(compositionResult); // parse
 				// Print some data to console to see if results are correct
 				LOGGER.info("response = " + response.getResultName());
+				listener.getLogger().println("Composition : " + composition.getName() + " completed successfully, with results name : " + response.getResultName());
 				composition.setResponse(response);
 			} else {
 				// Parse returned results file.
 				// FileReader reader = new FileReader(xml.getName()); // load
 				// file
 				xstream.processAnnotations(CompositionError.class); 
-				CompositionError data = (CompositionError) xstream.fromXML(compositionResult); // parse
-				LOGGER.info("data = " + data.getMessage());
+				CompositionError response = (CompositionError) xstream.fromXML(compositionResult); // parse
+				LOGGER.info("response = " + response.getMessage());
+				listener.getLogger().println("Composition : " + composition.getName() + " failed to run. : " + response.getMessage());
 			}
 
 			// if (deleteOldResults) {
@@ -334,13 +305,17 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 		// changing format from junitxml to be plain xml,
 		// as we need the ResultName to get the results.
 		if (composition.getResponse() == null) {
-			LOGGER.info("WARNING. NO results found for composition: " + composition.getName());
+			LOGGER.info("WARNING. NO results name found for composition: " + composition.getName());
 			return -1;
 		}
+
+		listener.getLogger().println("Creating scommand args for retrieving results for composition : " + composition.getName());
 
 		args.add("cmd=export", "format=csv", "type=result", "resultSource=resultTransactionAverageDurations")
 				.add("name=" + composition.getName() + "/" + composition.getResponse().getResultName())
 				.add("file=" + fileName);
+
+		//listener.getLogger().println(args);
 
 		FilePath csv = new FilePath(build.getWorkspace(), fileName);
 
@@ -375,36 +350,13 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 		} else {
 			LOGGER.info("ERROR found getting results for " + composition.getName() + "/"
 					+ composition.getResponse().getResultName());
+			listener.getLogger().println("ERROR found getting results for " + composition.getName() + "/"
+					+ composition.getResponse().getResultName());
+
 			return -1;
 		}
 
-		// if (result.length() == 0) {
-		// // SCommand did not produce any output.
-		// // This should never happen, but just in case...
-		// return -1;
-		// }
 
-		// XStream xstream = jenkins.model.Jenkins.XSTREAM;
-		//
-		// if (exitCode == 0) {
-		// // Parse returned results file.
-		// //FileReader reader = new FileReader(xml.getName()); // load file
-		// xstream.processAnnotations(CompositionResponse.class); // inform
-		// XStream to parse annotations in class
-		// CompositionResponse data = (CompositionResponse)
-		// xstream.fromXML(compositionResult); // parse
-		// // Print some data to console to see if results are correct
-		// LOGGER.info("data = " + data.getResultName());
-		// } else {
-		// // Parse returned results file.
-		// //FileReader reader = new FileReader(xml.getName()); // load file
-		// xstream.processAnnotations(CompositionError.class); // inform XStream
-		// to parse annotations in class
-		// CompositionError data = (CompositionError)
-		// xstream.fromXML(compositionResult); // parse
-		// LOGGER.info("data = " + data.getMessage());
-		// }
-		//
 		//
 		// if (deleteOldResults) {
 		// // Run SCommand again to clean up the old results.
@@ -451,12 +403,12 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 	}
 
 	private void displayTransactionThreholds(PrintStream jenkinsLogger) {
-		String THRESHOLD_TABLE_FORMAT = "%-15s %-20s %7s";
+		String THRESHOLD_TABLE_FORMAT = "%-15s %-20s %7s - %7s";
 		jenkinsLogger.println("~");
 		jenkinsLogger.println("Custom Transaction Threholds:");
 		for (TransactionThreshold threshold : thresholds) {
 			String formattedString = String.format(THRESHOLD_TABLE_FORMAT, threshold.getTransactionname(),
-					threshold.getThresholdname(), threshold.getThresholdmaxvalue());
+					threshold.getThresholdname(), threshold.getThresholdminvalue(), threshold.getThresholdmaxvalue());
 			jenkinsLogger.println(formattedString);
 		}
 		jenkinsLogger.println("~");

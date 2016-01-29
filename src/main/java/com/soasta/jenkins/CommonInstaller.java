@@ -51,7 +51,6 @@ public class CommonInstaller extends DownloadFromUrlInstaller
       this.server = server;
       this.installerType = installerType;
       this.buildNumber = buildNumber;
-      LOGGER.info("C0");
   }
 
   CommonInstaller(CloudTestServer server, Installers installFileType) throws IOException {
@@ -59,17 +58,14 @@ public class CommonInstaller extends DownloadFromUrlInstaller
   }
 
   CloudTestServer getServer() {
-	  LOGGER.info("C1");
     return server;
   }
   
   VersionNumber getBuildNumber() {
-	  LOGGER.info("C2");
     return buildNumber;
   }
   
   Installers getInstallerType() {
-	  LOGGER.info("C3");
     return installerType;
   }
   
@@ -98,7 +94,6 @@ public class CommonInstaller extends DownloadFromUrlInstaller
   public FilePath performInstallation(ToolInstallation tool, Node node, TaskListener log) throws IOException, InterruptedException {
     try
     {
-        LOGGER.info("C4");
       return super.performInstallation(tool, node, log);
     }
     catch (IOException e)

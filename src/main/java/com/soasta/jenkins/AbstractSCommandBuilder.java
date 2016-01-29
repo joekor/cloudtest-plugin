@@ -51,11 +51,8 @@ public abstract class AbstractSCommandBuilder extends Builder {
       if (s == null)
           throw new AbortException("No TouchTest server is configured in the system configuration.");
   
-      LOGGER.info("A0");
-      
       // Download SCommand, if needed.
       FilePath scommand = new SCommandInstaller(s).scommand(build.getBuiltOn(), listener);
-      LOGGER.info("A1");
       
       // if composition is not null, and has a username and password, then use them. 
       // If not, use the one in the cloud test server
