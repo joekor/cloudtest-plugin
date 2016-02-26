@@ -32,7 +32,7 @@ public class CSVResultsProcessorTest {
 	private String junitFailXML = "<testsuites>\n" + 
 			"  <testsuite timestamp=\"27-Jan-2016 14:58:00\" errors=\"0\" tests=\"1\" failures=\"1\" time=\"0\">\n" + 
 			"    <testcase name=\"Minute: 0\" classname=\"PC\" time=\"0\">\n" + 
-			"      <failure>Transaction time 45 not within defined bounds of 10 - 20</failure>\n" + 
+			"      <failure>Average Response 45 not within defined bounds of 10 - 20</failure>\n" + 
 			"    </testcase>\n" + 
 			"  </testsuite>\n" + 
 			"</testsuites>";
@@ -40,7 +40,7 @@ public class CSVResultsProcessorTest {
 	public void testParse() {
 		List<TransactionThreshold> thresholds = new ArrayList<TransactionThreshold>();
 		
-		CSVResultsProcessor resultsProcessor = new CSVResultsProcessor(testStr, thresholds, System.out);
+		AverageResponseProcessor resultsProcessor = new AverageResponseProcessor(testStr, thresholds, System.out);
 		resultsProcessor.parse();
 				
 		assertEquals(7, resultsProcessor.getHeaderMap().size());
@@ -52,8 +52,8 @@ public class CSVResultsProcessorTest {
 	@Test
 	public void testParseWithPassingThresholds() {
 		List<TransactionThreshold> thresholds = new ArrayList<TransactionThreshold>();
-		thresholds.add(new TransactionThreshold("DownloadTransactionsBooked", "notusedhere", "10", "50", ""));
-		CSVResultsProcessor resultsProcessor = new CSVResultsProcessor(testStr, thresholds, System.out);
+		thresholds.add(new TransactionThreshold("DownloadTransactionsBooked", "Average Response", "10", "50", ""));
+		AverageResponseProcessor resultsProcessor = new AverageResponseProcessor(testStr, thresholds, System.out);
 		resultsProcessor.parse();
 				
 		assertEquals(7, resultsProcessor.getHeaderMap().size());
@@ -68,8 +68,8 @@ public class CSVResultsProcessorTest {
 	@Test
 	public void testParseWithFailingThresholds() {
 		List<TransactionThreshold> thresholds = new ArrayList<TransactionThreshold>();
-		thresholds.add(new TransactionThreshold("DLP - Sign In and Watch", "notusedhere", "10", "50", ""));
-		CSVResultsProcessor resultsProcessor = new CSVResultsProcessor(testStr, thresholds, System.out);
+		thresholds.add(new TransactionThreshold("DLP - Sign In and Watch", "Average Response", "10", "50", ""));
+		AverageResponseProcessor resultsProcessor = new AverageResponseProcessor(testStr, thresholds, System.out);
 		resultsProcessor.parse();
 				
 		assertEquals(7, resultsProcessor.getHeaderMap().size());
@@ -77,15 +77,15 @@ public class CSVResultsProcessorTest {
 		JUnitTestSuites junitTestSuites = resultsProcessor.getTestSuites();
 		assertEquals(junitTestSuites.getTestsuites().size(),resultsProcessor.getRowCount()); 
 		assertEquals(1, junitTestSuites.getTestsuites().get(0).getTestcases().size());
-		assertEquals("Transaction time 595 not within defined bounds of 10 - 50", junitTestSuites.getTestsuites().get(0).getTestcases().get(0).getFailure());
+		assertEquals("Average Response 595 not within defined bounds of 10 - 50", junitTestSuites.getTestsuites().get(0).getTestcases().get(0).getFailure());
 
 	}
 	
 	@Test
 	public void testParseWithPassingThresholdsXML() {
 		List<TransactionThreshold> thresholds = new ArrayList<TransactionThreshold>();
-		thresholds.add(new TransactionThreshold("PC", "notusedhere", "40", "50", ""));
-		CSVResultsProcessor resultsProcessor = new CSVResultsProcessor(smallTestStr, thresholds, System.out);
+		thresholds.add(new TransactionThreshold("PC", "Average Response", "40", "50", ""));
+		AverageResponseProcessor resultsProcessor = new AverageResponseProcessor(smallTestStr, thresholds, System.out);
 		resultsProcessor.parse();
 				
 		assertEquals(3, resultsProcessor.getHeaderMap().size());
@@ -108,8 +108,8 @@ public class CSVResultsProcessorTest {
 	@Test
 	public void testParseWithFailingThresholdsXML() {
 		List<TransactionThreshold> thresholds = new ArrayList<TransactionThreshold>();
-		thresholds.add(new TransactionThreshold("PC", "notusedhere", "10", "20", ""));
-		CSVResultsProcessor resultsProcessor = new CSVResultsProcessor(smallTestStr, thresholds, System.out);
+		thresholds.add(new TransactionThreshold("PC", "Average Response", "10", "20", ""));
+		AverageResponseProcessor resultsProcessor = new AverageResponseProcessor(smallTestStr, thresholds, System.out);
 		resultsProcessor.parse();
 				
 		assertEquals(3, resultsProcessor.getHeaderMap().size());
@@ -117,7 +117,7 @@ public class CSVResultsProcessorTest {
 		JUnitTestSuites junitTestSuites = resultsProcessor.getTestSuites();
 		assertEquals(junitTestSuites.getTestsuites().size(),resultsProcessor.getRowCount()); 
 		assertEquals(1, junitTestSuites.getTestsuites().get(0).getTestcases().size());
-		assertEquals("Transaction time 45 not within defined bounds of 10 - 20", junitTestSuites.getTestsuites().get(0).getTestcases().get(0).getFailure());
+		assertEquals("Average Response 45 not within defined bounds of 10 - 20", junitTestSuites.getTestsuites().get(0).getTestcases().get(0).getFailure());
 		XStream xstream = jenkins.model.Jenkins.XSTREAM;
 		xstream.processAnnotations(JUnitTestSuites.class);
 

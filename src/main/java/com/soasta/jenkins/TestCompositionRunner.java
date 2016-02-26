@@ -31,6 +31,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.xml.sax.InputSource;
 
+import com.soasta.jenkins.resulttypes.ResultType;
 import com.soasta.jenkins.xstream.CompositionError;
 import com.soasta.jenkins.xstream.CompositionResponse;
 import com.soasta.jenkins.xstream.JUnitTestSuites;
@@ -45,7 +46,6 @@ import hudson.model.AbstractBuild;
 import hudson.model.AutoCompletionCandidates;
 import hudson.model.BuildListener;
 import hudson.model.TaskListener;
-import hudson.remoting.VirtualChannel;
 import hudson.tasks.junit.JUnitResultArchiver;
 import hudson.util.ArgumentListBuilder;
 import hudson.util.FormValidation;
@@ -206,7 +206,12 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 				// args.add("validation=" + threshold.toScommandString());
 				// }
 			}
-			getResults(build, resultsDir, composition, launcher, listener, args);
+		      for (ResultType resultType : ResultType.values()) {
+					getResults(build, resultsDir, composition, launcher, listener, args, resultType);
+		    	  
+		    	 // listBox.add(AVG_MSG_RSP, x.getUIText());
+		    	}
+		      
 
 		}
 
@@ -287,7 +292,7 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 	}
 
 	private Integer getResults(AbstractBuild<?, ?> build, String resultsDir, Composition composition, Launcher launcher,
-			BuildListener listener, ArgumentListBuilder args) throws IOException, InterruptedException {
+			BuildListener listener, ArgumentListBuilder args, ResultType resultType) throws IOException, InterruptedException {
 
 		LOGGER.info("in getResults");
 
@@ -310,8 +315,8 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 		}
 
 		listener.getLogger().println("Creating scommand args for retrieving results for composition : " + composition.getName());
-
-		args.add("cmd=export", "format=csv", "type=result", "resultSource=resultTransactionAverageDurations")
+		
+		args.add("cmd=export", "format=csv", "type=result", "resultSource="+resultType.getResultType())
 				.add("name=" + composition.getName() + "/" + composition.getResponse().getResultName())
 				.add("file=" + fileName);
 
@@ -332,7 +337,7 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 			// FilePath csv = new FilePath(build.getWorkspace(), fileName);
 			String csvResults = csv.readToString();
 			LOGGER.info(csvResults);
-			CSVResultsProcessor csvProcessor = new CSVResultsProcessor(csvResults, thresholds, listener.getLogger());
+			AverageResponseProcessor csvProcessor = new AverageResponseProcessor(csvResults, thresholds, listener.getLogger());
 			if (csvProcessor.parse()) {
 				JUnitTestSuites testSuites = csvProcessor.getTestSuites();
 				XStream xstream = jenkins.model.Jenkins.XSTREAM;
