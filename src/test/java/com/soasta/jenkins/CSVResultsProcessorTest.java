@@ -40,7 +40,7 @@ public class CSVResultsProcessorTest {
 	public void testParse() {
 		List<TransactionThreshold> thresholds = new ArrayList<TransactionThreshold>();
 		
-		AverageResponseProcessor resultsProcessor = new AverageResponseProcessor(testStr, thresholds, System.out);
+		AverageResponseProcessor resultsProcessor = (AverageResponseProcessor) TestCompositionRunner.getResponseProcessor(AverageResponseProcessor.class, testStr, thresholds, System.out);
 		resultsProcessor.parse();
 				
 		assertEquals(7, resultsProcessor.getHeaderMap().size());
@@ -53,7 +53,7 @@ public class CSVResultsProcessorTest {
 	public void testParseWithPassingThresholds() {
 		List<TransactionThreshold> thresholds = new ArrayList<TransactionThreshold>();
 		thresholds.add(new TransactionThreshold("DownloadTransactionsBooked", "Average Response", "10", "50", ""));
-		AverageResponseProcessor resultsProcessor = new AverageResponseProcessor(testStr, thresholds, System.out);
+		AverageResponseProcessor resultsProcessor = (AverageResponseProcessor) TestCompositionRunner.getResponseProcessor(AverageResponseProcessor.class, testStr, thresholds, System.out);
 		resultsProcessor.parse();
 				
 		assertEquals(7, resultsProcessor.getHeaderMap().size());
@@ -69,7 +69,7 @@ public class CSVResultsProcessorTest {
 	public void testParseWithFailingThresholds() {
 		List<TransactionThreshold> thresholds = new ArrayList<TransactionThreshold>();
 		thresholds.add(new TransactionThreshold("DLP - Sign In and Watch", "Average Response", "10", "50", ""));
-		AverageResponseProcessor resultsProcessor = new AverageResponseProcessor(testStr, thresholds, System.out);
+		AverageResponseProcessor resultsProcessor = (AverageResponseProcessor) TestCompositionRunner.getResponseProcessor(AverageResponseProcessor.class, testStr, thresholds, System.out);
 		resultsProcessor.parse();
 				
 		assertEquals(7, resultsProcessor.getHeaderMap().size());
@@ -85,7 +85,8 @@ public class CSVResultsProcessorTest {
 	public void testParseWithPassingThresholdsXML() {
 		List<TransactionThreshold> thresholds = new ArrayList<TransactionThreshold>();
 		thresholds.add(new TransactionThreshold("PC", "Average Response", "40", "50", ""));
-		AverageResponseProcessor resultsProcessor = new AverageResponseProcessor(smallTestStr, thresholds, System.out);
+		AverageResponseProcessor resultsProcessor = (AverageResponseProcessor) TestCompositionRunner.getResponseProcessor(AverageResponseProcessor.class, smallTestStr, thresholds, System.out);
+
 		resultsProcessor.parse();
 				
 		assertEquals(3, resultsProcessor.getHeaderMap().size());
@@ -109,7 +110,7 @@ public class CSVResultsProcessorTest {
 	public void testParseWithFailingThresholdsXML() {
 		List<TransactionThreshold> thresholds = new ArrayList<TransactionThreshold>();
 		thresholds.add(new TransactionThreshold("PC", "Average Response", "10", "20", ""));
-		AverageResponseProcessor resultsProcessor = new AverageResponseProcessor(smallTestStr, thresholds, System.out);
+		AverageResponseProcessor resultsProcessor = (AverageResponseProcessor) TestCompositionRunner.getResponseProcessor(AverageResponseProcessor.class, smallTestStr, thresholds, System.out);
 		resultsProcessor.parse();
 				
 		assertEquals(3, resultsProcessor.getHeaderMap().size());

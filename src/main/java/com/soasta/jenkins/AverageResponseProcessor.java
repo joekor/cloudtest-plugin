@@ -24,12 +24,40 @@ public class AverageResponseProcessor implements CSVResultsProcessor {
 	private JUnitTestSuites jUnitTestSuites;
 	private PrintStream jenkinsLogger;
 
-	public AverageResponseProcessor(String csvResults, List<TransactionThreshold> thresholds, PrintStream jenkinsLogger) {
-		this.csvResults = csvResults;
-		this.thresholds = thresholds;	
-		this.jenkinsLogger = jenkinsLogger;
+	public AverageResponseProcessor()  {
 	}
 	
+	
+	public String getCsvResults() {
+		return csvResults;
+	}
+
+
+	public void setCsvResults(String csvResults) {
+		this.csvResults = csvResults;
+	}
+
+
+	public List<TransactionThreshold> getThresholds() {
+		return thresholds;
+	}
+
+
+	public void setThresholds(List<TransactionThreshold> thresholds) {
+		this.thresholds = thresholds;
+	}
+
+
+	public PrintStream getJenkinsLogger() {
+		return jenkinsLogger;
+	}
+
+
+	public void setJenkinsLogger(PrintStream jenkinsLogger) {
+		this.jenkinsLogger = jenkinsLogger;
+	}
+
+
 	/**
 	 * 
 Minute of Test,Time,DLP - Sign In and Watch,DownloadTransactionsBooked,DownloadTransactionsDeleted,Login,ParentalControl
@@ -60,41 +88,43 @@ Minute of Test,Time,DLP - Sign In and Watch,DownloadTransactionsBooked,DownloadT
 			
 			// loop through, and validate the thresholds we are interested in are a subset the headers received.
 			// If not, log and remove that threshold.
-			for (Iterator<TransactionThreshold> iterator = thresholds.iterator(); iterator.hasNext();) {
-				TransactionThreshold threshold = iterator.next();
-				if (!headerMap.containsKey(threshold.getTransactionname())) {
-			        // Remove the current element from the iterator and the list.
-			        iterator.remove();
-			        log("WARNING: " + threshold.getTransactionname() + " not found in results from composition.");
-			    }
-			}
-			
-			
-			for (CSVRecord csvRecord : parser) {
-				rowCount++;
-				LOGGER.info(csvRecord.getRecordNumber()+"");
-				Testsuite testsuite = new Testsuite();
-				jUnitTestSuites.addTestsuite(testsuite);
-				// Loop through all the defined thresholds from the Jenkins Plugin UI.
-				for (TransactionThreshold threshold : thresholds) {
-					// If there is a matching transaction name defined, compared to the results from the test, then continue.
-					String value = csvRecord.get(threshold.getTransactionname());
-					if (value != null) {
-						testsuite.incrementCount();
-						testsuite.setTimestamp(csvRecord.get(TIMESTAMP_COLUMN));
-						String testName = "Minute: " + csvRecord.get(MINUTE_OF_TEST_COLUMN);
-						Testcase testcase = new Testcase(testName, threshold.getTransactionname(), 0 );
-						if (!validateTest(csvRecord, threshold)) {
-							testsuite.incrementFailures();
-							testcase.setFailure(threshold.getThresholdname().trim() + " " + value.trim() + " not within defined bounds of " + threshold.getThresholdminvalue() + " - " + threshold.getThresholdmaxvalue());
-						}
-						testsuite.addTestcase(testcase);
-						System.out.println(testcase);
-						LOGGER.info(threshold.getTransactionname() + " : " + value);
-						
-					}
+			if (thresholds != null) {
+				for (Iterator<TransactionThreshold> iterator = thresholds.iterator(); iterator.hasNext();) {
+					TransactionThreshold threshold = iterator.next();
+					if (!headerMap.containsKey(threshold.getTransactionname())) {
+				        // Remove the current element from the iterator and the list.
+				        iterator.remove();
+				        log("WARNING: " + threshold.getTransactionname() + " not found in results from composition.");
+				    }
 				}
 				
+				
+				for (CSVRecord csvRecord : parser) {
+					rowCount++;
+					LOGGER.info(csvRecord.getRecordNumber()+"");
+					Testsuite testsuite = new Testsuite();
+					jUnitTestSuites.addTestsuite(testsuite);
+					// Loop through all the defined thresholds from the Jenkins Plugin UI.
+					for (TransactionThreshold threshold : thresholds) {
+						// If there is a matching transaction name defined, compared to the results from the test, then continue.
+						String value = csvRecord.get(threshold.getTransactionname());
+						if (value != null) {
+							testsuite.incrementCount();
+							testsuite.setTimestamp(csvRecord.get(TIMESTAMP_COLUMN));
+							String testName = "Minute: " + csvRecord.get(MINUTE_OF_TEST_COLUMN);
+							Testcase testcase = new Testcase(testName, threshold.getTransactionname(), 0 );
+							if (!validateTest(csvRecord, threshold)) {
+								testsuite.incrementFailures();
+								testcase.setFailure(threshold.getThresholdname().trim() + " " + value.trim() + " not within defined bounds of " + threshold.getThresholdminvalue() + " - " + threshold.getThresholdmaxvalue());
+							}
+							testsuite.addTestcase(testcase);
+							System.out.println(testcase);
+							LOGGER.info(threshold.getTransactionname() + " : " + value);
+							
+						}
+					}
+					
+				}
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

@@ -52,6 +52,10 @@ import hudson.util.FormValidation;
 import hudson.util.QuotedStringTokenizer;
 import jenkins.model.Jenkins;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+
 /**
  * @author Kohsuke Kawaguchi
  */
@@ -159,7 +163,7 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 				args.add("outputthresholdcsvdir=" + build.getWorkspace());
 			}
 
-			LOGGER.info("adding new callable to list");
+			debug(listener, "adding new callable to list");
 
 			callables.add(callable(build, resultsDir, composition, launcher, listener, args));
 
@@ -228,21 +232,25 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 
 			LOGGER.info("in callable thing");
 			listener.getLogger().println("Creating scommand args for running composition : " + composition.getName());
+			LOGGER.info("Creating scommand args for running composition : " + composition.getName());
 
 			// changing format from junitxml to be plain xml,
 			// as we need the ResultName to get the results.
 			args.add("cmd=play", "wait", "format=xml").add("name=" + composition.getName());
-			//listener.getLogger().println(args);
+			listener.getLogger().println(args);
 
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
 			// Run it!
 			int exitCode = launcher.launch().cmds(args).pwd(build.getWorkspace()).stdout(baos)
 					.stderr(listener.getLogger()).join();
+			
+			
+			LOGGER.info("exitCode from command = " + exitCode);
 
 			String compositionResult = baos.toString().trim();
 
-			writeFile(resultsDir, build.getWorkspace(), compositionResult, composition, "response", "xml");
+			writeFile(listener, resultsDir, build.getWorkspace(), compositionResult, composition, "response", "xml");
 
 			if (compositionResult.length() == 0) {
 				// SCommand did not produce any output.
@@ -252,22 +260,36 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 
 			XStream xstream = jenkins.model.Jenkins.XSTREAM;
 
-			if (exitCode == 0) {
+			if (( exitCode == 0) || (compositionResult.contains("<Composition>")) ) {
 				// Parse returned results file.
-				xstream.processAnnotations(CompositionResponse.class); 
-				CompositionResponse response = (CompositionResponse) xstream.fromXML(compositionResult); // parse
-				// Print some data to console to see if results are correct
-				LOGGER.info("response = " + response.getResultName());
-				listener.getLogger().println("Composition : " + composition.getName() + " completed successfully, with results name : " + response.getResultName());
-				composition.setResponse(response);
+				
+				CompositionResponse response;
+				try {
+					listener.getLogger().println("Parsing Composition Response");
+					xstream.processAnnotations(CompositionResponse.class); 
+					response = (CompositionResponse) xstream.fromXML(compositionResult);
+					// Print some data to console to see if results are correct
+					LOGGER.info("response = " + response.getResultName());
+					listener.getLogger().println("Composition : " + composition.getName() + " completed with results name : " + response.getResultName());
+					composition.setResponse(response);
+				} catch (Exception e) {
+					LOGGER.severe(e.getMessage());
+					e.printStackTrace();
+				}
 			} else {
 				// Parse returned results file.
 				// FileReader reader = new FileReader(xml.getName()); // load
 				// file
-				xstream.processAnnotations(CompositionError.class); 
-				CompositionError response = (CompositionError) xstream.fromXML(compositionResult); // parse
-				LOGGER.info("response = " + response.getMessage());
-				listener.getLogger().println("Composition : " + composition.getName() + " failed to run. : " + response.getMessage());
+				try {
+					listener.getLogger().println("Parsing Composition Error Response");
+					xstream.processAnnotations(CompositionError.class); 
+					CompositionError response = (CompositionError) xstream.fromXML(compositionResult); // parse
+					LOGGER.info("response = " + response.getMessage());
+					listener.getLogger().println("Composition : " + composition.getName() + " failed to run. : " + response.getMessage());
+				} catch (Exception e) {
+					LOGGER.severe(e.getMessage());
+					e.printStackTrace();
+				}
 			}
 
 			// if (deleteOldResults) {
@@ -291,10 +313,22 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 		};
 	}
 
+	private void log(BuildListener listener, String message) {
+		LOGGER.info(message);
+		listener.getLogger().println(message);
+	}
+	
+	private void debug(BuildListener listener, String message) {
+		LOGGER.finest(message);
+		listener.getLogger().println(message);
+	}
+	
+	
 	private Integer getResults(AbstractBuild<?, ?> build, String resultsDir, Composition composition, Launcher launcher,
 			BuildListener listener, ArgumentListBuilder args, ResultType resultType) throws IOException, InterruptedException {
 
-		LOGGER.info("in getResults");
+		log(listener, "in getResults");
+		
 
 		String fileName = composition + ".csv";
 
@@ -310,11 +344,11 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 		// changing format from junitxml to be plain xml,
 		// as we need the ResultName to get the results.
 		if (composition.getResponse() == null) {
-			LOGGER.info("WARNING. NO results name found for composition: " + composition.getName());
+			log(listener, "WARNING. NO results name found for composition: " + composition.getName());
 			return -1;
 		}
 
-		listener.getLogger().println("Creating scommand args for retrieving results for composition : " + composition.getName());
+		log(listener, "Creating scommand args for retrieving results for composition : " + composition.getName());
 		
 		args.add("cmd=export", "format=csv", "type=result", "resultSource="+resultType.getResultType())
 				.add("name=" + composition.getName() + "/" + composition.getResponse().getResultName())
@@ -330,14 +364,14 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 				.join();
 
 		String result = baos.toString().trim();
-		LOGGER.info("result = " + result);
-		LOGGER.info(fileName);
+		log(listener, "result = " + result);
+		log(listener, fileName);
 
 		if (exitCode == 0) {
 			// FilePath csv = new FilePath(build.getWorkspace(), fileName);
 			String csvResults = csv.readToString();
-			LOGGER.info(csvResults);
-			AverageResponseProcessor csvProcessor = new AverageResponseProcessor(csvResults, thresholds, listener.getLogger());
+			log(listener, csvResults);
+			CSVResultsProcessor csvProcessor = getResponseProcessor(resultType.getProcessorClass(), csvResults, thresholds, listener.getLogger());
 			if (csvProcessor.parse()) {
 				JUnitTestSuites testSuites = csvProcessor.getTestSuites();
 				XStream xstream = jenkins.model.Jenkins.XSTREAM;
@@ -345,15 +379,15 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 
 				// Object to XML Conversion
 				String xml = xstream.toXML(testSuites);
-				LOGGER.info(formatXml(xml));
+				log(listener, formatXml(xml));
 				
-				writeFile(resultsDir, build.getWorkspace(), formatXml(xml), composition, "junit", "xml");
+				writeFile(listener, resultsDir, build.getWorkspace(), formatXml(xml), composition, "junit", "xml");
 				
 
 			}
 
 		} else {
-			LOGGER.info("ERROR found getting results for " + composition.getName() + "/"
+			log(listener, "ERROR found getting results for " + composition.getName() + "/"
 					+ composition.getResponse().getResultName());
 			listener.getLogger().println("ERROR found getting results for " + composition.getName() + "/"
 					+ composition.getResponse().getResultName());
@@ -384,7 +418,38 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 
 	}
 
-	private void writeFile(String resultsDir, FilePath workspace, String stringtoWrite, Composition composition, String filetype, String extension) throws IOException, InterruptedException {
+	public static CSVResultsProcessor getResponseProcessor(Class clazz, String csvResults, List<TransactionThreshold> thresholds, PrintStream logger) {		
+		Constructor[] ctors = clazz.getDeclaredConstructors();
+		Constructor ctor = null;
+		CSVResultsProcessor c = null;
+		for (int i = 0; i < ctors.length; i++) {
+		    ctor = ctors[i];
+		    if (ctor.getGenericParameterTypes().length == 0)
+			break;
+		}
+
+		try {
+		    ctor.setAccessible(true);
+		    c = (CSVResultsProcessor)ctor.newInstance();
+		    c.setCsvResults(csvResults);
+		    c.setJenkinsLogger(logger);
+		    c.setThresholds(thresholds);
+	        // production code should handle these exceptions more gracefully
+		} catch (InstantiationException x) {
+		    x.printStackTrace();
+	 	} catch (InvocationTargetException x) {
+	 	    x.printStackTrace();
+		} catch (IllegalAccessException x) {
+		    x.printStackTrace();
+		}
+	    
+		return c;
+	
+	}
+	
+	
+	
+	private void writeFile(BuildListener listener, String resultsDir, FilePath workspace, String stringtoWrite, Composition composition, String filetype, String extension) throws IOException, InterruptedException {
 		
 		String fileName = composition + "-" + filetype + ".xml";
 
@@ -401,8 +466,8 @@ public class TestCompositionRunner extends AbstractSCommandBuilder {
 		// Make sure the directory exists.
 		filepath.getParent().mkdirs();
 		
-		LOGGER.info("stringtoWrite = " + stringtoWrite);
-		LOGGER.info(fileName);
+		debug(listener, "stringtoWrite = " + stringtoWrite);
+		debug(listener, fileName);
 		filepath.write(stringtoWrite, null);
 		
 	}
